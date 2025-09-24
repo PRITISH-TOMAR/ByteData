@@ -199,3 +199,17 @@ func (t* BPlusTree) InsertIntoParent(left *node, key string, right * node){
 }
 
 // Insert inserts a key-value pair into the B+ tree.
+func (t* BPlusTree) Insert(key string, value any){
+	leaf := t.findLeaf(key)
+
+	// insert or replace in leaf
+	t.InsertIntoLeaf(leaf, key, value)
+	
+	// if leaf overflows, split it
+	if len(leaf.keys) > t.order {
+		newRightLeaf, promoted_key := t.splitLeaf(leaf)
+		// recursively insert into parent
+		t.InsertIntoParent(leaf, promoted_key, newRightLeaf)
+	}
+	return
+}
