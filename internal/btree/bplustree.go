@@ -64,9 +64,10 @@ func (t *BPlusTree) findLeaf(key string) *Node {
 	curr := t.root
 
 	for !curr.isLeaf {
-		// find the child pointer to follow
-		i := sort.SearchStrings(curr.keys, key)
-
+		// Use sort.Search to find the child index
+		i := sort.Search(len(curr.keys), func(i int) bool {
+			return key < curr.keys[i]
+		})
 		curr = curr.children[i]
 	}
 
@@ -96,25 +97,24 @@ func (t *BPlusTree) InsertIntoLeaf(leaf *Node, key string, value any) {
 	leaf.keys = append(leaf.keys, "")      // make space for new key
 	leaf.values = append(leaf.values, nil) // make space for new value
 
-	copy(leaf.keys[i+1:], leaf.keys[i:])     // shift keys to the right
-	copy(leaf.values[i+1:], leaf.values[i:]) // shift values to the right
-
+	copy(leaf.keys[i+1:], leaf.keys[i:]) // shift keys to the right
 	leaf.keys[i] = key
+
+	copy(leaf.values[i+1:], leaf.values[i:]) // shift values to the right
 	leaf.values[i] = value
 }
 
-//slpitLeaf splits a leaf node and returns the new leaf node and the promoted key.
+// slpitLeaf splits a leaf node and returns the new leaf node and the promoted key.
 func (t *BPlusTree) splitLeaf(leaf *Node) (*Node, string) {
 	mid := len(leaf.keys) / 2 // finding mid for balancing the split
 
 	// Create new leaf node
 	newRightLeaf := &Node{
-		isLeaf:   true,
-		keys:     append([]string{}, leaf.keys[mid:]...), // copy second half of keys
-		values:   append([]any{}, leaf.values[mid:]...),  // copy second half of values
-		children: nil,
-		next:     leaf.next, // new leaf points to the next of current leaf
-		parent:   leaf.parent,
+		isLeaf: true,
+		keys:   append([]string{}, leaf.keys[mid:]...), // copy second half of keys
+		values: append([]any{}, leaf.values[mid:]...),  // copy second half of values
+		next:   leaf.next,                              // new leaf points to the next of current leaf
+		parent: leaf.parent,
 	}
 
 	// Update current leaf
@@ -130,21 +130,19 @@ func (t *BPlusTree) splitLeaf(leaf *Node) (*Node, string) {
 // splitInternal splits an internal node and returns the new node and the promoted key.
 func (t *BPlusTree) splitInternal(node *Node) (*Node, string) {
 	mid := len(node.keys) / 2
-
+	promoted_key := node.keys[mid] // first key of new internal to be promoted
 	// Create new internal node
-	newRightInterval := &Node{
+	newRightInternal := &Node{
 		isLeaf:   false,
-		keys:     append([]string{}, node.keys[mid+1:]...), // copy second half of keys
+		keys:     append([]string{}, node.keys[mid+1:]...),    // copy second half of keys
 		children: append([]*Node{}, node.children[mid+1:]...), // copy second half of children
 		parent:   node.parent,
-		values:   nil,
-		next:     nil,
 	}
 
 	// Update parent pointers of moved children
-	for _, child := range newRightInterval.children {
-		if child!= nil {
-		child.parent = newRightInterval
+	for _, child := range newRightInternal.children {
+		if child != nil {
+			child.parent = newRightInternal
 		}
 	}
 
@@ -152,13 +150,11 @@ func (t *BPlusTree) splitInternal(node *Node) (*Node, string) {
 	node.keys = node.keys[:mid] // from 0 to mid-1
 	node.children = node.children[:mid+1]
 
-	// Insert new key into parent
-	promoted_key := newRightInterval.keys[0]// first key of new internal to be promoted
-	return newRightInterval, promoted_key
+	return newRightInternal, promoted_key
 }
 
 // InsertIntoParent inserts key and child into parent node.
-func (t* BPlusTree) InsertIntoParent(left *Node, key string, right * Node){
+func (t *BPlusTree) InsertIntoParent(left *Node, key string, right *Node) {
 	parent := left.parent
 	// if left is root
 	if parent == nil {
@@ -180,17 +176,18 @@ func (t* BPlusTree) InsertIntoParent(left *Node, key string, right * Node){
 	// insert key and right child into parent
 	i := sort.SearchStrings(parent.keys, key)
 
-	parent.keys = append(parent.keys, "")		   // make space for new key
-	parent.children = append(parent.children, nil)   // make space for new child
-	copy(parent.keys[i+1:], parent.keys[i:])         // shift keys to the right
-	copy(parent.children[i+2:], parent.children[i+1:]) // shift children to the right
-
+	parent.keys = append(parent.keys, "")    // make space for new key
+	copy(parent.keys[i+1:], parent.keys[i:]) // shift keys to the right
 	parent.keys[i] = key
-	parent.children[i+1] = right // as left child is already at its correct position in children 
+
+	parent.children = append(parent.children, nil)     // make space for new child
+	copy(parent.children[i+2:], parent.children[i+1:]) // shift children to the right
+	parent.children[i+1] = right                       // as left child is already at its correct position in children
+
 	right.parent = parent
 
 	// if parent overflows, split it
-	if len(parent.keys) > t.order{
+	if len(parent.keys) > t.order {
 		// split intervals.
 		rightSibling, promoted_key := t.splitInternal(parent)
 		// recursively insert into parent
@@ -199,16 +196,26 @@ func (t* BPlusTree) InsertIntoParent(left *Node, key string, right * Node){
 }
 
 // Insert inserts a key-value pair into the B+ tree.
-func (t* BPlusTree) Insert(key string, value any){
+func (t *BPlusTree) Insert(key string, value any) {
+	if t.root == nil {
+		t.root = &Node{
+			isLeaf: true,
+			keys:   []string{key},
+			values: []any{value},
+		}
+		return
+	}
+
 	leaf := t.findLeaf(key)
 
 	// insert or replace in leaf
 	t.InsertIntoLeaf(leaf, key, value)
-	
+
 	// if leaf overflows, split it
 	if len(leaf.keys) > t.order {
 		newRightLeaf, promoted_key := t.splitLeaf(leaf)
 		// recursively insert into parent
+
 		t.InsertIntoParent(leaf, promoted_key, newRightLeaf)
 	}
 }
@@ -229,27 +236,26 @@ func (t *BPlusTree) Delete(key string) error {
 
 // RangeQuery returns all key-value pairs within the specified range [start, end].
 
-
 // Debugging or printing the tree structure
 func (t *BPlusTree) Print() string {
-	if t.root == nil{
+	if t.root == nil {
 		return "<EMPTY>"
 	}
 	// BFS traversal per level
 
 	currentLevel := []*Node{t.root}
 	result := ""
-	level:= 0
+	level := 0
 
 	for len(currentLevel) > 0 {
-		result+= fmt.Sprintf("Level %d: ", level)
+		result += fmt.Sprintf("Level %d: ", level)
 		nextLevel := []*Node{}
 
 		for _, n := range currentLevel {
 			if n.isLeaf {
-				result += fmt.Sprintf("Leaf(keys: %v) | ", n.keys)
+				result += fmt.Sprintf("Leaf keys: %v) | ", n.keys)
 			} else {
-				result += fmt.Sprintf("Internal(keys: %v) | ", n.keys)
+				result += fmt.Sprintf("Internal keys: %v) | ", n.keys)
 				nextLevel = append(nextLevel, n.children...)
 			}
 		}
