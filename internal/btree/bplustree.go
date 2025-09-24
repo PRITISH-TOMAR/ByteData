@@ -103,6 +103,7 @@ func (t *BPlusTree) InsertIntoLeaf(leaf *Node, key string, value any) {
 	leaf.values[i] = value
 }
 
+//slpitLeaf splits a leaf node and returns the new leaf node and the promoted key.
 func (t *BPlusTree) splitLeaf(leaf *Node) (*Node, string) {
 	mid := len(leaf.keys) / 2 // finding mid for balancing the split
 
@@ -155,3 +156,46 @@ func (t *BPlusTree) splitInternal(node *Node) (*Node, string) {
 	promoted_key := newRightInterval.keys[0]// first key of new internal to be promoted
 	return newRightInterval, promoted_key
 }
+
+// InsertIntoParent inserts key and child into parent node.
+func (t* BPlusTree) InsertIntoParent(left *node, key string, right * node){
+	parent := left.parent
+	// if left is root
+	if parent == nil {
+		// create new root
+		newRoot := &Node{
+			isLeaf:   false,
+			keys:     []string{key},
+			children: []*Node{left, right},
+			values:   nil,
+			next:     nil,
+			parent:   nil,
+		}
+		left.parent = newRoot
+		right.parent = newRoot
+		t.root = newRoot
+		return
+	}
+
+	// insert key and right child into parent
+	i := sort.SearchStrings(parent.keys, key)
+
+	parent.keys = append(parent.keys, "")		   // make space for new key
+	parent.children = append(parent.children, nil)   // make space for new child
+	copy(parent.keys[i+1:], parent.keys[i:])         // shift keys to the right
+	copy(parent.children[i+2:], parent.children[i+1:]) // shift children to the right
+
+	parent.keys[i] = key
+	parent.children[i+1] = right // as left child is already at its correct position in children 
+	right.parent = parent
+
+	// if parent overflows, split it
+	if len(parent.keys) > t.order{
+		// split intervals.
+		rightSibling, promoted_key := t.splitInternal(parent)
+		// recursively insert into parent
+		t.InsertIntoParent(parent, promoted_key, rightSibling)
+	}
+}
+
+// Insert inserts a key-value pair into the B+ tree.
