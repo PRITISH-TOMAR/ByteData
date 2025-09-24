@@ -142,8 +142,8 @@ func (t *BPlusTree) splitInternal(node *Node) (*Node, string) {
 	}
 
 	// Update parent pointers of moved children
-	for _, child:= right.children{
-		if c!= nil {
+	for _, child := range newRightInterval.children {
+		if child!= nil {
 		child.parent = newRightInterval
 		}
 	}
@@ -158,7 +158,7 @@ func (t *BPlusTree) splitInternal(node *Node) (*Node, string) {
 }
 
 // InsertIntoParent inserts key and child into parent node.
-func (t* BPlusTree) InsertIntoParent(left *node, key string, right * node){
+func (t* BPlusTree) InsertIntoParent(left *Node, key string, right * Node){
 	parent := left.parent
 	// if left is root
 	if parent == nil {
@@ -211,5 +211,52 @@ func (t* BPlusTree) Insert(key string, value any){
 		// recursively insert into parent
 		t.InsertIntoParent(leaf, promoted_key, newRightLeaf)
 	}
-	return
+}
+
+// Delete removes a key-value pair from the B+ tree.
+func (t *BPlusTree) Delete(key string) error {
+	leaf := t.findLeaf(key)
+	i := sort.SearchStrings(leaf.keys, key) // search for the key in the leaf node
+	if i < len(leaf.keys) && leaf.keys[i] == key {
+		// Key found, remove it
+		leaf.keys = append(leaf.keys[:i], leaf.keys[i+1:]...)
+		leaf.values = append(leaf.values[:i], leaf.values[i+1:]...)
+		// Note: Balancing after deletion ->  Planned for  upcoming version/phase 1+.
+		return nil
+	}
+	return fmt.Errorf("key %s not found", key)
+}
+
+// RangeQuery returns all key-value pairs within the specified range [start, end].
+
+
+// Debugging or printing the tree structure
+func (t *BPlusTree) Print() string {
+	if t.root == nil{
+		return "<EMPTY>"
+	}
+	// BFS traversal per level
+
+	currentLevel := []*Node{t.root}
+	result := ""
+	level:= 0
+
+	for len(currentLevel) > 0 {
+		result+= fmt.Sprintf("Level %d: ", level)
+		nextLevel := []*Node{}
+
+		for _, n := range currentLevel {
+			if n.isLeaf {
+				result += fmt.Sprintf("Leaf(keys: %v) | ", n.keys)
+			} else {
+				result += fmt.Sprintf("Internal(keys: %v) | ", n.keys)
+				nextLevel = append(nextLevel, n.children...)
+			}
+		}
+
+		result += "\n"
+		currentLevel = nextLevel
+		level++
+	}
+	return result
 }
