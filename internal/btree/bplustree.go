@@ -59,7 +59,7 @@ func New(order int) *BPlusTree {
 	return &BPlusTree{root: res, order: order}
 }
 
-// find for a certain key in the tree
+// find for a certain key's leaf node in the tree
 func (t *BPlusTree) findLeaf(key string) *Node {
 	curr := t.root
 
@@ -73,7 +73,55 @@ func (t *BPlusTree) findLeaf(key string) *Node {
 	return curr
 }
 
+func (t *BPlusTree) Get(key string) (any, bool) {
+	leaf := t.findLeaf(key)
+	i := sort.SearchStrings(leaf.keys, key) // search for the key in the leaf node
+	if i < len(leaf.keys) && leaf.keys[i] == key {
+		return leaf.values[i], true // if found
+	}
+	return nil, false // if not found -> returns  nil, false
+}
 
-func (t * BPlusTree) Get(key string) (any, bool) {
-	leaf 
+// InsertIntoLeaf inserts a key-value pair into a leaf node.
+func (t *BPlusTree) InsertIntoLeaf(leaf *Node, key string, value any) {
+	i := sort.SearchStrings(leaf.keys, key) // search for key
+
+	// if key exists, replace
+	if i < len(leaf.keys) && leaf.keys[i] == key {
+		leaf.values[i] = value
+		return
+	}
+
+	// insert at position i..
+	leaf.keys = append(leaf.keys, "")      // make space for new key
+	leaf.values = append(leaf.values, nil) // make space for new value
+
+	copy(leaf.keys[i+1:], leaf.keys[i:])     // shift keys to the right
+	copy(leaf.values[i+1:], leaf.values[i:]) // shift values to the right
+
+	leaf.keys[i] = key
+	leaf.values[i] = value
+}
+
+func (t *BPlusTree) splitLeaf(leaf *Node) (*Node, string) {
+	mid := len(leaf.keys) / 2 // finding mid for balancing the split
+
+	// Create new leaf node
+	newLeaf := &Node{
+		isLeaf:   true,
+		keys:     append([]string{}, leaf.keys[mid:]...), // copy second half of keys
+		values:   append([]any{}, leaf.values[mid:]...),  // copy second half of values
+		children: nil,
+		next:     leaf.next, // new leaf points to the next of current leaf
+		parent:   leaf.parent,
+	}
+
+	// Update current leaf
+	leaf.keys = leaf.keys[:mid] // from 0 to mid-1
+	leaf.values = leaf.values[:mid]
+	leaf.next = newLeaf // current leaf points to new leaf
+
+	// Insert new key into parent
+	promoted_key := newLeaf.keys[0] // first key of new leaf to be promoted
+	return newLeaf, promoted_key    // return new leaf and its first key to be inserted into parent
 }
