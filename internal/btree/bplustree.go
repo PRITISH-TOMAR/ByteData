@@ -107,7 +107,7 @@ func (t *BPlusTree) splitLeaf(leaf *Node) (*Node, string) {
 	mid := len(leaf.keys) / 2 // finding mid for balancing the split
 
 	// Create new leaf node
-	newLeaf := &Node{
+	newRightLeaf := &Node{
 		isLeaf:   true,
 		keys:     append([]string{}, leaf.keys[mid:]...), // copy second half of keys
 		values:   append([]any{}, leaf.values[mid:]...),  // copy second half of values
@@ -119,9 +119,39 @@ func (t *BPlusTree) splitLeaf(leaf *Node) (*Node, string) {
 	// Update current leaf
 	leaf.keys = leaf.keys[:mid] // from 0 to mid-1
 	leaf.values = leaf.values[:mid]
-	leaf.next = newLeaf // current leaf points to new leaf
+	leaf.next = newRightLeaf // current leaf points to new leaf
 
 	// Insert new key into parent
-	promoted_key := newLeaf.keys[0] // first key of new leaf to be promoted
-	return newLeaf, promoted_key    // return new leaf and its first key to be inserted into parent
+	promoted_key := newRightLeaf.keys[0] // first key of new leaf to be promoted
+	return newRightLeaf, promoted_key    // return new leaf and its first key to be inserted into parent
+}
+
+// splitInternal splits an internal node and returns the new node and the promoted key.
+func (t *BPlusTree) splitInternal(node *Node) (*Node, string) {
+	mid := len(node.keys) / 2
+
+	// Create new internal node
+	newRightInterval := &Node{
+		isLeaf:   false,
+		keys:     append([]string{}, node.keys[mid+1:]...), // copy second half of keys
+		children: append([]*Node{}, node.children[mid+1:]...), // copy second half of children
+		parent:   node.parent,
+		values:   nil,
+		next:     nil,
+	}
+
+	// Update parent pointers of moved children
+	for _, child:= right.children{
+		if c!= nil {
+		child.parent = newRightInterval
+		}
+	}
+
+	// Update current node -> to left node
+	node.keys = node.keys[:mid] // from 0 to mid-1
+	node.children = node.children[:mid+1]
+
+	// Insert new key into parent
+	promoted_key := newRightInterval.keys[0]// first key of new internal to be promoted
+	return newRightInterval, promoted_key
 }
