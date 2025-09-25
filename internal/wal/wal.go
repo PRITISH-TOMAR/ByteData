@@ -3,8 +3,6 @@ package wal
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
-	"io"
 	"os"
 )
 
@@ -19,9 +17,15 @@ type WAL struct {
 	lastLSN uint64   // last log sequence number( monotonically increasing)
 }
 
-// opens/ created a WAL fule at path. If file exits, it is opened in append mode.
+// opens/ creates a WAL file at path. If file exits, it is opened in append mode.
 func New(path string) (*WAL, error) {
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+	f, err := os.OpenFile(path, os.O_APPEND | os.O_CREATE | os.O_RDWR, 0644) // RDWR for read and write
+    // O_APPEND - append data to the file when writing
+		// O_CREATE - create a new file if it does not exist
+	// O_RDWR - open the file for both reading and writing  	
+	// combining above three flags - > 1024 | 64 | 2 -> decides what to do with the file				
+	// 0644 - user read write, group read, others read
+
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +41,7 @@ func (w *WAL) Close() error {
 }
 
 // Put writes a put record to the WAL.
-func (W *WAL) AppendPut(key, value []byte) (uint64, error) {
+func (w *WAL) AppendPut(key, value []byte) (uint64, error) {
 	return w.appendRecord(RecordPut, key, value)
 }
 
@@ -49,7 +53,7 @@ func (w *WAL) AppendDelete(key []byte) (uint64, error) {
 // appendRecord is the low-level writer.
 // Format: | uint32 totalLen | uint64 LSN(8) | unit8 Type(1) | uint32 KeySize | uint32 ValueSize | Key | Value |
 
-func (w *WAL) appendRecord(recordType uint8, key string, value []byte) (uint64, error) {
+func (w *WAL) appendRecord(recordType uint8, key, value []byte) (uint64, error) {
 
 	if w.f == nil {
 		return 0, errors.New("WAL file is not open")
