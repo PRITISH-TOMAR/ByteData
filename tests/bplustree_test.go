@@ -26,21 +26,21 @@ func TestBPlusTree(t *testing.T) {
 	}
 
 	// range query k02..k06
-	// fmt.Println("Range k02..k06:")
-	// res := t.Range("k02", "k06", 0)
-	// for _, p := range res {
-	// 	fmt.Printf("  %s -> %v\n", p.Key, p.Value)
-	// }
+	fmt.Println("Range k02..k06:")
+	res := tree.RangeQuery("k02", "k06")
+	for _, p := range res {
+		fmt.Printf("  %s -> %v\n", p.Key, p.Value)
+	}
 
 	// delete a key
-	// ok = t.Delete("k05")
-	// fmt.Println("Deleted k05?", ok)
-	// fmt.Println("After delete:\n", t.DebugString())
+	ok := tree.Delete("k05")
+	fmt.Println("Deleted k05?", ok)
+	fmt.Println("After delete:\n", tree.Print())
 
 	// range all
-	// all := t.Range("k00", "k99", 0)
-	// fmt.Println("All keys:")
-	// for _, p := range all {
-	// 	fmt.Printf("  %s -> %v\n", p.Key, p.Value)
-	// }
+	all := tree.RangeQuery("k00", "k99")
+	fmt.Println("All keys:")
+	for _, p := range all {
+		fmt.Printf("  %s -> %v\n", p.Key, p.Value)
+	}
 }
