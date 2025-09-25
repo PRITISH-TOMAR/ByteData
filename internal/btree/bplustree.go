@@ -220,22 +220,6 @@ func (t *BPlusTree) Insert(key string, value any) {
 	}
 }
 
-// Delete removes a key-value pair from the B+ tree.
-func (t *BPlusTree) Delete(key string) error {
-	leaf := t.findLeaf(key)
-	i := sort.SearchStrings(leaf.keys, key) // search for the key in the leaf node
-	if i < len(leaf.keys) && leaf.keys[i] == key {
-		// Key found, remove it
-		leaf.keys = append(leaf.keys[:i], leaf.keys[i+1:]...)
-		leaf.values = append(leaf.values[:i], leaf.values[i+1:]...)
-		// Note: Balancing after deletion ->  Planned for  upcoming version/phase 1+.
-		return nil
-	}
-	return fmt.Errorf("key %s not found", key)
-}
-
-// RangeQuery returns all key-value pairs within the specified range [start, end].
-
 // Debugging or printing the tree structure
 func (t *BPlusTree) Print() string {
 	if t.root == nil {
@@ -265,4 +249,44 @@ func (t *BPlusTree) Print() string {
 		level++
 	}
 	return result
+}
+
+// Delete removes a key from the B+ tree -> Phase 1 : No rebalancing .
+func (t *BPlusTree) Delete(key string) bool {
+	leaf := t.findLeaf(key)
+
+	if leaf == nil {
+		return false // tree is empty
+	}
+
+	i := sort.SearchStrings(leaf.keys, key) // search for the key in the leaf node
+	if i < len(leaf.keys) && leaf.keys[i] == key {
+		// Key found, remove it
+		leaf.keys = append(leaf.keys[:i], leaf.keys[i+1:]...)
+		leaf.values = append(leaf.values[:i], leaf.values[i+1:]...)
+		// Note: Balancing after deletion ->  Planned for  upcoming version/phase 1+.
+		return true
+	}
+	return false // key not found
+}
+
+// RangeQueries for range [start, end] -> actual purpose of B+ Tree
+func (t *BPlusTree) RangeQuery(start, end string) []KVPair {
+	results := []KVPair{}
+	leaf := t.findLeaf(start)
+
+	// 1. find the starting leaf node
+	for leaf != nil {
+		for i, key := range leaf.keys {
+			if key >= start && key <= end {
+				results = append(results, KVPair{Key: key, Value: leaf.values[i]})
+			}
+			if key > end {
+				return results
+			}
+		}
+		leaf = leaf.next // move to the next leaf node
+	}
+
+	return results
 }
