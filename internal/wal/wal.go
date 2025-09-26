@@ -195,3 +195,49 @@ func (w *WAL) Replay(handler func(lsn uint64, recordTychan uint8, key, value []b
 	}
 	return nil
 }
+
+
+func (w * WAL) recoverLastLSN() error {
+	if w.f == nil {
+		return errors.New("WAL file is not open")
+	}
+
+	// seek to start of file
+	if _, err := w.f.Seek(0, 0); err != nil {
+		return err
+	}
+
+	var lastLSN uint64 = 0
+
+	for {
+		// read total length
+		lenBuf := make([]byte, 4) // first 4 bytes are of each log record
+		if _, err := io.ReadFull(w.f, lenBuf); err != nil {
+
+			if err == io.EOF {
+				break // reached end of file
+			}
+			return fmt.Errorf("error reading total length: %v", err)
+		}
+
+		// finding lsn if the recordBuf is not fullu filled - incomplete record
+		totalLen := binary.LittleEndian.Uint32(lenBuf)
+		recordBuf := make([]byte, totalLen)
+		if _, err := io.ReadFull(w.f, recordBuf); err != nil {
+			return fmt.Errorf("error reading record: %v", err)
+		}
+
+		curr := 0
+		// read LSN
+		lsn := binary.LittleEndian.Uint64(recordBuf[curr : curr+8])
+		curr += 8
+
+		// update lastLSN
+		if lsn > lastLSN {
+			lastLSN = lsn
+		}
+	}
+
+	w.lastLSN = lastLSN
+	return nil
+}
