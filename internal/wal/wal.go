@@ -35,11 +35,11 @@ func New(path string) (*WAL, error) {
 	w := &WAL{f: f}
 
 	// replay to recover lastLSN
-	// if err := w.recoverLastLSN(); err != nil {
-	// 	return nil, fmt.Errorf("WAL recovery failed: %w", err)
-	// }
+	if err := w.recoverLastLSN(); err != nil {
+		return nil, fmt.Errorf("WAL recovery failed: %w", err)
+	}
 
-	return &WAL{f: f}, nil
+	return w, nil
 }
 
 // Close closes the underlying file.
@@ -126,6 +126,7 @@ func (w *WAL) appendRecord(recordType uint8, key, value []byte) (uint64, error) 
 	return lsn, nil
 }
 
+// Replay reads the WAL from the last LSN and calls the handler for each record.
 func (w *WAL) Replay(handler func(lsn uint64, recordTychan uint8, key, value []byte) error) error {
 	if w.f == nil {
 		return errors.New("WAL file is not open")
