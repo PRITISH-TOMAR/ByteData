@@ -95,3 +95,62 @@ func (kv * KVEngine) ReplayWAL() error {
 	}
 	return nil
 }
+
+// Put adds or updates a key-value pair in the KV engine.
+func (kv *KVEngine) Put(key, value []byte) (uint64, error) {
+	if kv.wal == nil {
+		return 0, errors.New("WAL is not initialized")
+	}
+	// append to WAL
+	lsn, err := kv.wal.AppendPut(key, value)
+	if err != nil {
+		return 0, fmt.Errorf("failed to append PUT to WAL: %w", err)
+	}
+
+	// update in-memory point index
+	vm := &valueMeta{ value: make([]byte, len(value)), lsn: lsn }
+	copy(vm.value, value)
+	kv.pointIndex[string(key)] = vm
+
+	// insert into B+ tree for range queries
+	kv.index.Insert(string(key), value)
+
+	return lsn, nil
+}
+
+// Get retrieves the value for a given key.
+func (kv *KVEngine) Get(key []byte) ([]byte, error){
+	vm, ok := kv.pointIndex[string(key)]
+	if !ok {
+		return nil, errors.New("key not found")
+	}
+	// return a copy to prevent external modification
+	valueCopy := make([]byte, len(vm.value))
+	copy(valueCopy, vm.value)
+	return valueCopy, nil
+}
+
+// Delete removes a key-value pair from the KV engine.
+func (kv *KVEngine) Delete(key []byte) (uint64, error) {
+	if kv.wal == nil {
+		return 0, errors.New("WAL is not initialized")
+	}
+	// append delete record to WAL
+	lsn, err := kv.wal.AppendDelete(key)
+	if err != nil {
+		return 0, fmt.Errorf("failed to append DELETE to WAL: %w", err)
+	}
+
+	// remove from in-memory point index
+	delete(kv.pointIndex, string(key))
+
+	// remove from B+ tree
+	kv.index.Delete(string(key))
+
+	return lsn, nil
+}
+
+// Range retrieves all key-value pairs within the specified key range [startKey, endKey].
+func (kv *KVEngine) Range(startKey, endKey []byte) ([]btree.KVPair) {
+	return kv.index.RangeQuery(string(startKey), string(endKey))
+}
