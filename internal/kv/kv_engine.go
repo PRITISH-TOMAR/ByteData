@@ -45,6 +45,7 @@ func NewKVEngine(walPath string, btreeOrder int) (*KVEngine, error) {
 		_ = w.Close()
 		return nil, fmt.Errorf("WAL replay failed: %w", err)
 	}
+	fmt.Println("WAL replayed successfully, in-memory state restored.")
 	return engine, nil
 }
 

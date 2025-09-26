@@ -1,8 +1,8 @@
 {
   "client_id": "alice",
   "storage_mode": "disk",
-  "wal_path": "/tmp/byted/alice/wal",
-  "snapshot_path": "/tmp/byted/alice/snapshots",
+  "wal_path": "./tmp/wal.txt",
+  "snapshot_path": "./tmp/alice/",
   "max_memory_mb": 512,
   "fsync_every": 100
 }
