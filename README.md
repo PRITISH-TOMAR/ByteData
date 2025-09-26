@@ -1,5 +1,36 @@
 # **ByteData — Product Requirements**
 
+# ByteData Database Setup
+
+## Quick Start
+
+Follow these steps to get ByteData up and running:
+
+```bash
+# Clone the repository
+git clone https://github.com/PRITISH-TOMAR/ByteData.git
+
+# Navigate to the project directory
+cd ByteData
+
+# Start the database service
+go run main.go -u root -p root
+```
+
+## Prerequisites
+
+- Go installed on your system
+- Git for cloning the repository
+
+## Command Options
+
+- `-u root` - Sets username to 'root'
+- `-p root` - Sets password to 'root'
+
+The service will start with these default credentials for quick setup and testing.
+
+--- 
+
 ## **1. Core Product Requirements**
 
 1. **Run as a web service** (HTTP/gRPC APIs).
