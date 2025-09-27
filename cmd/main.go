@@ -5,10 +5,17 @@ import (
 
 	"github.com/PRITISH-TOMAR/byted/internal/cli"
 	"github.com/PRITISH-TOMAR/byted/internal/config"
+	"github.com/PRITISH-TOMAR/byted/internal/auth"
 	"github.com/PRITISH-TOMAR/byted/internal/kv"
 )
 
 func main() {
+
+	if err := auth.InitRoot(); err!=nil{
+		fmt.Println("Error initializing root user:", err)
+		return
+	}
+
 	// 1. Load client config
 	cfg, err := config.LoadConfig("test_config.json")
 	if err != nil {
