@@ -7,6 +7,5 @@ tmp/
 .gitignore
 README.md
 Dockerfile
-.dockerignore
 *.md
 .env
