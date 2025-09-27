@@ -78,11 +78,13 @@ func (kv * KVEngine) ReplayWAL() error {
 			vm := &valueMeta{ value: make([]byte, len(value)), lsn: lsn }
 			copy(vm.value, value)
 			kv.pointIndex[string(key)] = vm
+			kv.index.Insert(string(key), value) // also insert into B+ tree
 
 		case wal.RecordDelete:
 			// delete from point index
 			delete(kv.pointIndex, string(key))
 			kv.index.Delete(string(key)) // also delete from B+ tree
+			
 
 		default:
 			return fmt.Errorf("unknown record type: %d", recordType)
