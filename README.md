@@ -37,7 +37,5 @@ cd bytedata
 docker build -t bytedata .
 
 # Run with volume mount for data persistence
-docker run -it  -p 4040:4040 \ 
-  -v $(pwd)/byte-data/wal:/tmp/ \     
-  bytedata -u root -p root
+docker run -it  -p 4040:4040 -v $(pwd)/byte-data/wal:/tmp/       bytedata -u root -p root
 ```
