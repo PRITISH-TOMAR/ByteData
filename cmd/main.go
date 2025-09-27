@@ -10,7 +10,7 @@ import (
 
 func main() {
 	// 1. Load client config
-	cfg, err := config.LoadConfig("/tmp/test_config.json")
+	cfg, err := config.LoadConfig("test_config.json")
 	if err != nil {
 		fmt.Println("Error loading config:", err)
 		return

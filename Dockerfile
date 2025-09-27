@@ -22,10 +22,9 @@ WORKDIR /app
 # Create necessary directories
 RUN mkdir -p /tmp/wal /tmp/snapshots
 
-
-COPY test_config.json /tmp/test_config.json
 COPY --from=builder /app/bytedata ./bytedata
+CMD ["./bytedata"]
+COPY test_config.json test_config.json
 
 EXPOSE 4040 
 ENTRYPOINT [ "/app/bytedata" ]
-CMD ["./bytedata"]
