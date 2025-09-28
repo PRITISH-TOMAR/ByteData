@@ -20,11 +20,12 @@ FROM alpine:latest
 # Set the working directory inside the container
 WORKDIR /app
 # Create necessary directories
-RUN mkdir -p /tmp/wal /tmp/snapshots
+RUN mkdir -p /tmp/wal /tmp/snapshots /root/.byedata
 
 COPY --from=builder /app/bytedata ./bytedata
 CMD ["./bytedata"]
 COPY test_config.json test_config.json
+
 
 EXPOSE 4040 
 ENTRYPOINT [ "/app/bytedata" ]
