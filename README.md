@@ -26,11 +26,11 @@ cd bytedata
 ```bash
 
 # For the very first time :
-go build -o bytedata cmd/main.go ./bytedata
+go run cmd/main.go 
 
 
 # After setting up the new username and password
-go build -o bytedata cmd/main.go ./bytedata -u /<username/>
+go run cmd/main.go -u <username>
 ```
 
   
