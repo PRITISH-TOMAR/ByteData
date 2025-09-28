@@ -8,11 +8,6 @@ import (
 )
 // StartCLI starts the ByteData shell for a given KVEngine
 func StartCLI(username, password string, engine *kv.KVEngine) {
-	// Simple auth check
-	if username != "root" || password != "root" {
-		fmt.Println("Invalid username/password. Usage: bytedata -u <name> -p <password>")
-		return
-	}
 
 	fmt.Printf("Welcome %s! Connected to ByteData Engine.\n", username)
 
