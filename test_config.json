@@ -1,5 +1,5 @@
 {
-  "client_id": "alice",
+  "client_id": "01",
   "storage_mode": "disk",
   "wal_path": "/tmp/wal.txt",
   "snapshot_path": "/tmp/alice/",

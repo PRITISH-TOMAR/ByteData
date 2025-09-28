@@ -36,6 +36,9 @@ cd bytedata
 # Build the image
 docker build -t bytedata .
 
-# Run with volume mount for data persistence
-docker run -it  -p 4040:4040 -v $(pwd)/byte-data/wal:/tmp/       bytedata -u root -p root
+# For the very first time, Run with volume mount for data persistence 
+docker run -it  -p 4040:4040 -v ./.bytedata:/root/.bytedata/ bytedata
+
+# After setting up the new username and password
+docker run -it  -p 4040:4040 -v $(pwd)/.bytedata:/root/.bytedata/ bytedata -u \<username\>
 ```
