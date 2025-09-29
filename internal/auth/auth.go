@@ -2,12 +2,13 @@ package auth
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"errors"
-	"golang.org/x/crypto/bcrypt"
+
 	"github.com/PRITISH-TOMAR/byted/constants"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -22,7 +23,7 @@ func InitAuthFile() error {
 
 	_, err := os.Stat(dir)
 	if os.IsNotExist(err) {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, constants.OWNERPERMISSION); err != nil {
 			return fmt.Errorf("failed to create auth directory: %v", err)
 		}
 	}
@@ -47,8 +48,6 @@ func CreateUser(username, password string) error {
 		Password: string(hash),
 	}
 
-	
-
 	data, err := json.Marshal(user)
 	if err != nil {
 		return fmt.Errorf("failed to marshal user data: %v", err)
@@ -57,7 +56,7 @@ func CreateUser(username, password string) error {
 	if err := InitAuthFile(); err != nil {
 		return err
 	}
-	
+
 	return os.WriteFile(authFile, data, 0600)
 }
 
@@ -88,7 +87,7 @@ func FirstTimeSetup() (string, string, error) {
 
 	var newUser, newPass string
 
-	fmt.Println("Welcome! Please set up your username and password.");
+	fmt.Println("Welcome! Please set up your username and password.")
 	fmt.Print("Enter new username: ")
 	fmt.Scanln(&newUser)
 	fmt.Print("Enter new password: ")
@@ -98,7 +97,7 @@ func FirstTimeSetup() (string, string, error) {
 		return "", "", errors.New("username and password cannot be empty")
 	}
 
-	if err:= CreateUser(newUser, newPass); err != nil {
+	if err := CreateUser(newUser, newPass); err != nil {
 		return "", "", err
 	}
 
