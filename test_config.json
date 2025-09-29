@@ -1,8 +1,0 @@
-{
-  "client_id": "01",
-  "storage_mode": "disk",
-  "wal_path": "/tmp/wal.txt",
-  "snapshot_path": "/tmp/alice/",
-  "max_memory_mb": 512,
-  "fsync_every": 100
-}

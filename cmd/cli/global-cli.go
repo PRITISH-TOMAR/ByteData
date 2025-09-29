@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"github.com/PRITISH-TOMAR/byted/internal/kv"
+
+	"github.com/PRITISH-TOMAR/byted/internal/bucket"
 )
+
 // StartCLI starts the ByteData shell for a given KVEngine
-func StartCLI(username, password string, engine *kv.KVEngine) {
+func StartCLI(username string, bucketManager *bucket.BucketManager) {
 
 	fmt.Printf("Welcome %s! Connected to ByteData Engine.\n", username)
 
@@ -18,7 +20,7 @@ func StartCLI(username, password string, engine *kv.KVEngine) {
 			break
 		}
 		cmdLine := reader.Text()
-		err := ExecuteCommmand(cmdLine, engine)
+		err := ExecuteGlobalCommmand(cmdLine, bucketManager)
 		if err != nil {
 			fmt.Println("Error:", err)
 		}
