@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/PRITISH-TOMAR/byted/constants"
@@ -41,7 +40,7 @@ func (bm *BucketManager) LoadMetaData() error {
 	if err := json.Unmarshal(data, &meta); err != nil {
 		return err
 	}
-
+	bm.mutex.Lock()
 	for _, bucketName := range meta.Buckets {
 		bucketDir := filepath.Join(bm.BaseDir, bucketName)
 		walPath := filepath.Join(bucketDir, constants.WALFILENAME)
@@ -54,16 +53,40 @@ func (bm *BucketManager) LoadMetaData() error {
 
 		kvEngine.ReplayWAL()
 
-		// bucket = &bucket{
-		// 	Name: bucketName,
-		// 	Tree:
-		// 	WAL: wal.New(walPath),
-		// }
-		// bm.Buckets[bucketName] = bucket
+		bucket := &Bucket{
+			Name: bucketName,
+			kvEngine: kvEngine,
+		}
+		bm.Buckets[bucketName] = bucket
 
 	}
+	bm.mutex.Unlock()
 	return nil
 }
+
+func (bm *BucketManager) SaveMetaData() error {
+	meta := MetaData{
+		Buckets:      make([]string, 0, len(bm.Buckets)),
+		ActiveBucket: "",
+	}
+	
+	for bucketName := range bm.Buckets {
+		meta.Buckets = append(meta.Buckets, bucketName)
+	}
+	
+	if bm.isActive != nil {
+		meta.ActiveBucket = bm.isActive.Name
+	}
+
+	data, err := json.MarshalIndent(meta, "", "  ")
+	if err != nil {
+		return err
+	}
+	
+	metaPath := constants.GLOBALMETAPATH
+	return os.WriteFile(metaPath, data, constants.OWNERPERMISSION)
+}
+
 
 func NewBucketManager(baseDir string) (*BucketManager, error) {
 
@@ -71,98 +94,12 @@ func NewBucketManager(baseDir string) (*BucketManager, error) {
 		return nil, err
 	}
 
-	return &BucketManager{
+	bm := &BucketManager{
 		BaseDir: baseDir,
 		Buckets: make(map[string]*Bucket),
-	}, nil
-}
-
-func (bm *BucketManager) CreateBucket(name string, btreeOrder int) error {
-	bm.mutex.Lock()
-	defer bm.mutex.Unlock()
-
-	if _, exists := bm.Buckets[name]; exists {
-		return fmt.Errorf("bucket %s already exists", name)
-	}
-	bucketDir := filepath.Join(bm.BaseDir, name)
-	if err := os.MkdirAll(bucketDir, constants.BUCKETPERMISSION); err != nil {
-		return err
 	}
 
-	bucket, err := NewBucket(name, bm.BaseDir, btreeOrder)
-	if err != nil {
-		return err
-	}
+	bm.LoadMetaData()
+	return bm, nil
 
-	bm.Buckets[name] = bucket
-	return nil
-}
-
-func (bm *BucketManager) UseBucket(name string) (*Bucket, error) {
-	bm.mutex.RLock()
-	defer bm.mutex.RUnlock()
-
-	bucket, exists := bm.Buckets[name]
-	if !exists {
-		return nil, fmt.Errorf("bucket %s does not exist", name)
-	}
-	bm.isActive = bucket
-	fmt.Printf("Switched to bucket: %s\n", name)
-	return bucket, nil
-}
-
-func (bm *BucketManager) GetActiveBucket() (*Bucket, error) {
-	bm.mutex.RLock()
-	defer bm.mutex.RUnlock()
-
-	if bm.isActive == nil {
-		return nil, fmt.Errorf("no active bucket selected")
-	}
-	return bm.isActive, nil
-}
-
-func (bm *BucketManager) ListBuckets(input string) []string {
-	bm.mutex.RLock()
-	defer bm.mutex.RUnlock()
-
-	bucketNames := make([]string, 0, len(bm.Buckets))
-	for name := range bm.Buckets {
-		if input == "" || strings.Contains(name, input) {
-			bucketNames = append(bucketNames, name)
-		}
-	}
-	return bucketNames
-}
-
-func (bm *BucketManager) ExitBucket() error {
-	bm.mutex.Lock()
-	defer bm.mutex.Unlock()
-
-	if bm.isActive == nil {
-		return fmt.Errorf("no active bucket to exit")
-	}
-	bm.isActive = nil
-	return nil
-}
-
-func (bm *BucketManager) DropBucket(name string) error {
-	bm.mutex.Lock()
-	defer bm.mutex.Unlock()
-
-	bucket, exists := bm.Buckets[name]
-	if !exists {
-		return fmt.Errorf("bucket %s does not exist", name)
-	}
-
-	if err := bucket.Close(); err != nil {
-		return err
-	}
-
-	bucketDir := filepath.Join(bm.BaseDir, name)
-	if err := os.RemoveAll(bucketDir); err != nil {
-		return err
-	}
-
-	delete(bm.Buckets, name)
-	return nil
 }

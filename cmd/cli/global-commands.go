@@ -37,6 +37,9 @@ func ExecuteGlobalCommmand(input string, bucketManager *bucket.BucketManager) er
 
 	case "drop":
 		return handleDropBucket(parts, bucketManager)
+	
+	case "pwb":
+		return showActiveBucket(bucketManager)
 
 	default:
 		 fmt.Printf("unknown command: %s", command)
@@ -91,6 +94,15 @@ func handleDropBucket(parts []string, bucketManager *bucket.BucketManager) error
 	return nil
 }
 
+
+func showActiveBucket(bucketManager *bucket.BucketManager) error {
+	activeBucket, err := bucketManager.GetActiveBucket()
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Active Bucket: %s\n", activeBucket.Name)
+	return nil
+}
 func handleExit() error {
 	fmt.Println("Exiting...")
 	os.Exit(0)
@@ -113,6 +125,7 @@ func printHelpGlobal() {
 	fmt.Println("  list                         - List all buckets")
 	fmt.Println("  use <bucket_name>            - Switch to the specified bucket")
 	fmt.Println("  drop <bucket_name>           - Delete the specified bucket")
+	fmt.Println("  pwb                          - Print the active bucket")
 	fmt.Println("  exit / quit                  - Exit the CLI")
 	fmt.Println("  help                         - Show this help message")
 }

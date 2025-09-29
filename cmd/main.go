@@ -18,6 +18,7 @@ func main() {
 
 	// 2. Initializing Bucket Manager
 	bucketManager, err := bucket.NewBucketManager(constants.DBBUCKETSPATH)
+	bucketManager.LoadMetaData()
 	if err != nil {
 		fmt.Println("Failed to initialize Bucket Manager:", err)
 		return
