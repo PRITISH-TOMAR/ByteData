@@ -101,5 +101,4 @@ func NewBucketManager(baseDir string) (*BucketManager, error) {
 
 	bm.LoadMetaData()
 	return bm, nil
-
 }

@@ -40,8 +40,6 @@ const (
 
 // permissions
 const (
-	OWNERPERMISSION = 0755 //// 755 is a common permission setting that allows the owner to read, write, and execute the directory,
-	// while group members and others can read and execute it.
-	REMOVEWRITEPERMISSION = 0555 // 555 permission removes write access for everyone, allowing only read and execute permissions.
-	
+	OWNERPERMISSION = 0755 
+	REMOVEWRITEPERMISSION = 0555 
 )
