@@ -43,7 +43,7 @@ func (bm *BucketManager) LoadMetaData() error {
 	bm.mutex.Lock()
 	for _, bucketName := range meta.Buckets {
 		bucketDir := filepath.Join(bm.BaseDir, bucketName)
-		walPath := filepath.Join(bucketDir, constants.WALFILENAME)
+		walPath := filepath.Join(bucketDir, bucketName+constants.WALFILENAME)
 
 		kvEngine, err := kv.NewKVEngine(walPath, constants.DEFAULTREEORDER)
 		if err != nil {

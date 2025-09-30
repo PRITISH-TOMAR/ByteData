@@ -46,7 +46,7 @@ func (bm *BucketManager) CreateBucket(name string, btreeOrder int) error {
 		return err
 	}
 
-	bucket, err := NewBucket(name, bm.BaseDir, btreeOrder)
+	bucket, err := NewBucket(name, bucketDir, btreeOrder)
 	if err != nil {
 		return err
 	}
