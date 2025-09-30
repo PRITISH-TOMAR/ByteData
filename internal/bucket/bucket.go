@@ -11,7 +11,7 @@ import (
 
 type Bucket struct{
 	Name string
-	kvEngine *kv.KVEngine
+	KvEngine *kv.KVEngine
 }
 
 func NewBucket(name, baseDir string, btreeOrder int) (*Bucket, error){
@@ -23,14 +23,14 @@ func NewBucket(name, baseDir string, btreeOrder int) (*Bucket, error){
 	}
 	bucket := &Bucket{
 		Name: name,
-		kvEngine: kvEngine,
+		KvEngine: kvEngine,
 	}
 	return bucket, nil
 }
 
 // Close closes the WAL file associated with the bucket.
 func (b* Bucket) Close() error{
-	return b.kvEngine.Close()
+	return b.KvEngine.Close()
 }
 
 
@@ -42,7 +42,7 @@ func (bm *BucketManager) CreateBucket(name string, btreeOrder int) error {
 		return fmt.Errorf("bucket %s already exists", name)
 	}
 	bucketDir := filepath.Join(bm.BaseDir, name)
-	if err := os.MkdirAll(bucketDir, constants.BUCKETPERMISSION); err != nil {
+	if err := os.MkdirAll(bucketDir, constants.OWNERPERMISSION); err != nil {
 		return err
 	}
 
