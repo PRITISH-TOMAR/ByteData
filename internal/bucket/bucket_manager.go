@@ -55,7 +55,7 @@ func (bm *BucketManager) LoadMetaData() error {
 
 		bucket := &Bucket{
 			Name: bucketName,
-			kvEngine: kvEngine,
+			KvEngine: kvEngine,
 		}
 		bm.Buckets[bucketName] = bucket
 

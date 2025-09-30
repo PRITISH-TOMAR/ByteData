@@ -42,6 +42,6 @@ const (
 const (
 	OWNERPERMISSION = 0755 //// 755 is a common permission setting that allows the owner to read, write, and execute the directory,
 	// while group members and others can read and execute it.
-	BUCKETPERMISSION = 0700 //// 700 is a common permission setting that allows the owner to read, write, and execute the directory,
-	// while group members and others have no permissions.
+	REMOVEWRITEPERMISSION = 0555 // 555 permission removes write access for everyone, allowing only read and execute permissions.
+	
 )

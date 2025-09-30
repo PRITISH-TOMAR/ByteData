@@ -69,6 +69,8 @@ func handleUseBucket(parts []string, bucketManager *bucket.BucketManager) error 
 	if _, err := bucketManager.UseBucket(parts[1]); err != nil {
 		return err
 	}
+	
+	StartBucketCLI(bucketManager)
 	return nil
 }
 
