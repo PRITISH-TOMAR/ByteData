@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/PRITISH-TOMAR/byted/constants"
-	"github.com/PRITISH-TOMAR/byted/internal/kv"
+	"byted/constants"
+	"byted/internal/kv"
 )
 
 type BucketManager struct {
@@ -54,7 +54,7 @@ func (bm *BucketManager) LoadMetaData() error {
 		kvEngine.ReplayWAL()
 
 		bucket := &Bucket{
-			Name: bucketName,
+			Name:     bucketName,
 			KvEngine: kvEngine,
 		}
 		bm.Buckets[bucketName] = bucket
@@ -69,11 +69,11 @@ func (bm *BucketManager) SaveMetaData() error {
 		Buckets:      make([]string, 0, len(bm.Buckets)),
 		ActiveBucket: "",
 	}
-	
+
 	for bucketName := range bm.Buckets {
 		meta.Buckets = append(meta.Buckets, bucketName)
 	}
-	
+
 	if bm.isActive != nil {
 		meta.ActiveBucket = bm.isActive.Name
 	}
@@ -82,11 +82,10 @@ func (bm *BucketManager) SaveMetaData() error {
 	if err != nil {
 		return err
 	}
-	
+
 	metaPath := constants.GLOBALMETAPATH
 	return os.WriteFile(metaPath, data, constants.OWNERPERMISSION)
 }
-
 
 func NewBucketManager(baseDir string) (*BucketManager, error) {
 

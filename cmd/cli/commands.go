@@ -1,16 +1,16 @@
 package cli
 
 import (
+	"byted/internal/bucket"
 	"errors"
 	"fmt"
+	"net"
 	"strings"
-
-	"github.com/PRITISH-TOMAR/byted/internal/bucket"
 )
 
-func ExecuteCommand(input string, bucket *bucket.Bucket) error {
+func ExecuteCommand(input string, bucket *bucket.Bucket, conn net.Conn) error {
 
-	fmt.Printf("Bytedata: [%s]> ", bucket.Name)
+	fmt.Fprintf(conn, "Bytedata: [%s]> ", bucket.Name)
 	input = strings.TrimSpace(input)
 	if input == "" {
 		return nil
@@ -20,24 +20,24 @@ func ExecuteCommand(input string, bucket *bucket.Bucket) error {
 
 	switch command {
 	case "put":
-		return handlePut(parts, bucket)
+		return handlePut(parts, bucket, conn)
 	case "get":
-		return handleGet(parts, bucket)
+		return handleGet(parts, bucket, conn)
 	case "del", "delete":
-		return handleDelete(parts, bucket)
+		return handleDelete(parts, bucket, conn)
 	case "range":
-		return handleRange(parts, bucket)
+		return handleRange(parts, bucket, conn)
 	case "exit", "quit":
-		return handleExitForBucket()
+		return handleExitForBucket(conn)
 	case "help":
-		return handleHelp(1)
+		return handleHelp(1, conn)
 	default:
-		return handleUnknown(command)
+		return handleUnknown(command, conn)
 	}
 
 }
 
-func handlePut(parts []string, bucket *bucket.Bucket) error {
+func handlePut(parts []string, bucket *bucket.Bucket, conn net.Conn) error {
 	if len(parts) < 3 {
 		return errors.New("usage: put <key> <value>")
 	}
@@ -50,11 +50,11 @@ func handlePut(parts []string, bucket *bucket.Bucket) error {
 		return fmt.Errorf("put failed: %v", err)
 	}
 
-	fmt.Printf("Put successful. LSN: %d\n", lsn)
+	fmt.Fprintf(conn, "Put successful. LSN: %d\n", lsn)
 	return nil
 }
 
-func handleGet(parts []string, bucket *bucket.Bucket) error {
+func handleGet(parts []string, bucket *bucket.Bucket, conn net.Conn) error {
 	if len(parts) != 2 {
 		return errors.New("usage: get <key>")
 	}
@@ -68,13 +68,13 @@ func handleGet(parts []string, bucket *bucket.Bucket) error {
 	if value == nil {
 		fmt.Println("Key not found")
 	} else {
-		fmt.Printf("Value: %s\n", string(value))
+		fmt.Fprintf(conn, "Value: %s\n", string(value))
 	}
 
 	return nil
 }
 
-func handleDelete(parts []string, bucket *bucket.Bucket) error {
+func handleDelete(parts []string, bucket *bucket.Bucket, conn net.Conn) error {
 	if len(parts) != 2 {
 		return errors.New("usage: del <key>")
 	}
@@ -85,11 +85,11 @@ func handleDelete(parts []string, bucket *bucket.Bucket) error {
 		return fmt.Errorf("delete failed: %v", err)
 	}
 
-	fmt.Printf("Delete successful. LSN: %d\n", lsn)
+	fmt.Fprintf(conn, "Delete successful. LSN: %d\n", lsn)
 	return nil
 }
 
-func handleRange(parts []string, bucket *bucket.Bucket) error {
+func handleRange(parts []string, bucket *bucket.Bucket, conn net.Conn) error {
 	if len(parts) != 3 {
 		return errors.New("usage: range <startKey> <endKey>")
 	}
@@ -101,20 +101,20 @@ func handleRange(parts []string, bucket *bucket.Bucket) error {
 	if len(results) == 0 {
 		fmt.Println("No keys found in the specified range")
 	} else {
-		fmt.Printf("Found %d key(s):\n", len(results))
+		fmt.Fprintf(conn, "Found %d key(s):\n", len(results))
 		for _, v := range results {
-			fmt.Printf("  Key: %s, Value: %s\n", v.Key, v.Value)
+			fmt.Fprintf(conn, "  Key: %s, Value: %s\n", v.Key, v.Value)
 		}
 	}
 
 	return nil
 }
 
-func handleUnknown(command string) error {
+func handleUnknown(command string, conn net.Conn) error {
 	return fmt.Errorf("unknown command: '%s'. Type 'help' for available commands", command)
 }
 
-func printHelpBucket() {
+func printHelpBucket(conn net.Conn) {
 	fmt.Println("Available commands:")
 	fmt.Println("  put <key> <value>    - Add or update a key-value pair")
 	fmt.Println("  get <key>            - Retrieve the value for a given key")
@@ -124,8 +124,7 @@ func printHelpBucket() {
 	fmt.Println("  help                 - Show this help message")
 }
 
-
-func handleExitForBucket() error {
+func handleExitForBucket(conn net.Conn) error {
 	fmt.Println("Exiting bucket CLI...")
 	return errors.New("exit")
 }

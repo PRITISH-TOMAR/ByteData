@@ -1,8 +1,8 @@
 package tests
 
 import (
+	"byted/internal/btree"
 	"fmt"
-	"github.com/PRITISH-TOMAR/byted/internal/btree"
 	"testing"
 )
 

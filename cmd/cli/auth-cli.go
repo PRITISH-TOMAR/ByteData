@@ -1,17 +1,16 @@
 package cli
 
 import (
+	"byted/internal/auth"
 	"fmt"
-	"github.com/PRITISH-TOMAR/byted/internal/auth"
 )
 
-
 func AuthCLI() (string, error) {
-		var username, password string
-   
+	var username, password string
+
 	if !auth.AuthExists() {
 		var err error
-		username, password, err = auth.FirstTimeSetup()
+		username, password, err = "a", "a", nil
 		if err != nil {
 			fmt.Println("Error during setup:", err)
 			return "", err

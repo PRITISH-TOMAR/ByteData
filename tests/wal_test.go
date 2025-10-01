@@ -1,4 +1,3 @@
-
 package tests
 
 import (
@@ -6,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/PRITISH-TOMAR/byted/internal/wal"
+	"byted/internal/wal"
 )
 
 func TestWAL(t *testing.T) {

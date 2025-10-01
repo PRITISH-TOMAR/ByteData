@@ -2,13 +2,13 @@ package cli
 
 import (
 	"bufio"
+	"byted/internal/bucket"
 	"fmt"
+	"net"
 	"os"
-	
-	"github.com/PRITISH-TOMAR/byted/internal/bucket"
 )
 
-func StartBucketCLI( bucketManager *bucket.BucketManager) {
+func StartBucketCLI(bucketManager *bucket.BucketManager, conn net.Conn) {
 	reader := bufio.NewScanner(os.Stdin)
 	bucket, err := bucketManager.GetActiveBucket()
 	if err != nil {
@@ -23,9 +23,9 @@ func StartBucketCLI( bucketManager *bucket.BucketManager) {
 			break
 		}
 		cmdLine := reader.Text()
-		err := ExecuteCommand(cmdLine, bucket)
+		err := ExecuteCommand(cmdLine, bucket, conn)
 
-		if(err != nil && err.Error() == "exit"){
+		if err != nil && err.Error() == "exit" {
 			bucketManager.ExitBucket()
 			break
 		}

@@ -1,17 +1,17 @@
 package main
 
 import (
+	"byted/cmd/cli"
+	"byted/constants"
+	"byted/internal/bucket"
 	"fmt"
-	"github.com/PRITISH-TOMAR/byted/cmd/cli"
-	"github.com/PRITISH-TOMAR/byted/internal/bucket"
-	"github.com/PRITISH-TOMAR/byted/constants"
 )
 
 func main() {
 
 	// 1 Authenticating USer via CLI
-	username,err :=cli.AuthCLI()
-	if err != nil{
+	username, err := cli.AuthCLI()
+	if err != nil {
 		fmt.Println("Authentication failed:", err)
 		return
 	}
@@ -24,5 +24,5 @@ func main() {
 		return
 	}
 	// 3. Entering to CLI parent - Bytedata Shell
-	cli.StartCLI( username, bucketManager)
+	cli.StartCLI(username, bucketManager)
 }

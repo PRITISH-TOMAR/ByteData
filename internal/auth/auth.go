@@ -1,13 +1,16 @@
 package auth
 
 import (
+	"bufio"
+	"byted/constants"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/PRITISH-TOMAR/byted/constants"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -60,6 +63,7 @@ func CreateUser(username, password string) error {
 	return os.WriteFile(authFile, data, 0600)
 }
 
+
 func ValidateUser(username, password string) error {
 	data, err := os.ReadFile(authFile)
 	if err != nil {
@@ -79,19 +83,33 @@ func ValidateUser(username, password string) error {
 		fmt.Println("Invalid password")
 		return errors.New("invalid password")
 	}
-
+	fmt.Println("Authentication successful")
 	return nil
 }
 
-func FirstTimeSetup() (string, string, error) {
 
-	var newUser, newPass string
+func UserExists(username string) bool {
+	data, err := os.ReadFile(authFile)
+	if err != nil {
+		return false
+	}
 
-	fmt.Println("Welcome! Please set up your username and password.")
-	fmt.Print("Enter new username: ")
-	fmt.Scanln(&newUser)
-	fmt.Print("Enter new password: ")
-	fmt.Scanln(&newPass)
+	var user User
+	if err := json.Unmarshal(data, &user); err != nil {
+		return false
+	}
+	return user.Username == username
+}
+
+func FirstTimeSetup(conn net.Conn, reader *bufio.Reader) (string, string, error) {
+
+	fmt.Fprint(conn, "Welcome! Please set up your username and password.\n")
+	fmt.Fprint(conn, "Enter new username:")
+	newUser, _ := reader.ReadString('\n')
+	fmt.Fprint(conn, "Enter new password:")
+	newPass, _ := reader.ReadString('\n')
+	newUser = strings.TrimSpace(newUser)
+	newPass = strings.TrimSpace(newPass)
 
 	if newUser == "" || newPass == "" {
 		return "", "", errors.New("username and password cannot be empty")
