@@ -9,6 +9,7 @@ import (
 	"byted/internal/auth"
 	"byted/internal/bucket"
 	"byted/structs"
+	"byted/cmd/cli"
 )
 
 type Server struct {
@@ -52,37 +53,51 @@ func (s *Server) acceptLoop() {
 			fmt.Fprintf(conn, "failed to accept connection: %v\n", err)
 			continue
 		}
+		defer conn.Close()
+
 		comm := communicators(conn)
 		if !auth.HandleAuthenticatedConnection(comm) {
 			conn.Close()
 		}
 
-		go s.readLoop(conn)
+		go s.readLoop(comm)
 
 	}
 }
 
-func (s *Server) readLoop(conn net.Conn) {
-	defer conn.Close()
-	// comm := communicators(conn)
+func (s *Server) readLoop(comm *structs.Communicators) {
+    for {
+        var msg structs.Message
 
-	// for {
-	// 	fmt.Fprintf(conn, "\nByteData: ") // prompt
-	// 	n, err := conn.Read(buff)
-	// 	if err != nil {
-	// 		fmt.Printf("failed to read from connection: %v\n", err)
-	// 		return // stop reading on error
-	// 	}
+        // Read message from client
+        if err := comm.Dec.Decode(&msg); err != nil {
+            fmt.Println("Client disconnected:", err)
+            return
+        }
 
-	// 	message := string(buff[:n])
-	// 	// Execute command with net.Conn directly, not pointer
-	// 	err = cli.ExecuteGlobalCommmand(ctx.Connection, message, s.BucketManager)
-	// 	if err != nil {
+        switch msg.Type {
+        case "command":
+            // Execute the command
+            err := cli.ExecuteGlobalCommmand(comm, msg.Command, s.BucketManager)
+            if err != nil {
+                // Send error back to client
+                comm.Enc.Encode(structs.Message{
+                    Type:    "error",
+                    Message: err.Error(),
+                })
+                continue
+            }
 
-	// 		fmt.Printf("command execution error: %v\n", err)
-	// 	}
-	// }
+        default:
+            // Unknown message type
+            comm.Enc.Encode(structs.Message{
+                Type:    "error",
+                Message: "Unknown message type: " + msg.Type,
+            })
+        }
+    }
 }
+
 
 func main() {
 	server := NewServer(":8080")

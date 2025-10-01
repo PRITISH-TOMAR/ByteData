@@ -108,40 +108,22 @@ func handleAuth(username *string, enc *json.Encoder, dec *json.Decoder, msg Mess
 }
 
 
-// func CommandLoop(enc *json.Encoder, dec *json.Decoder, msg Message) {
-// 	reader := bufio.NewReader(os.Stdin)
-// 	for {
-// 		fmt.Print("ByteData> ")
-// 		line, _ := reader.ReadString('\n')
-// 		line = strings.TrimSpace(line)
+func CommandLoop(enc *json.Encoder, dec *json.Decoder, msg Message) {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Print("ByteData> ")
+		line, _ := reader.ReadString('\n')
+		line = strings.TrimSpace(line)
 
-// 		if line == "exit" || line == "quit" {
-// 			enc.Encode(Message{Type: "command", Command: "exit"})
-// 			fmt.Println("Disconnected")
-// 			return
-// 		}
+		// Send command
+		enc.Encode(Message{Type: "command", Command: line})
 
-// 		// Send command
-// 		enc.Encode(Message{Type: "command", Command: line})
+		// Read server response
+		if err := dec.Decode(&msg); err != nil {
+			fmt.Println("Server disconnected")
+			return
+		}
 
-// 		// Read server response
-// 		if err := dec.Decode(&msg); err != nil {
-// 			fmt.Println("Server disconnected")
-// 			return
-// 		}
-
-// 		switch msg.Type {
-// 		case "response":
-// 			// Pretty print array of strings if available
-// 			if len(msg.Data) > 0 {
-// 				for _, item := range msg.Data {
-// 					fmt.Println(" -", item)
-// 				}
-// 			}
-// 		case "success":
-// 			fmt.Println(msg.Message)
-// 		case "error":
-// 			fmt.Println("Error:", msg.Message)
-// 		}
-// 	}
-// }
+		fmt.Println(msg.Message)
+	}
+}
