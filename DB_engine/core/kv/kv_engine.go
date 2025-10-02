@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/PRITISH-TOMAR/byted/internal/wal"
-	"github.com/PRITISH-TOMAR/byted/internal/btree"
+	"byted/DB_engine/core/btree"
+	"byted/DB_engine/core/wal"
 )
 
 // valueMeta holds the value and its last associated LSN.
@@ -15,14 +15,13 @@ type valueMeta struct {
 }
 
 type KVEngine struct {
-	wal *wal.WAL  // write ahead logs for durability
-	pointIndex map[string] * valueMeta // in-memory point index
-	index *btree.BPlusTree // on-disk b+tree for range queries
+	wal        *wal.WAL              // write ahead logs for durability
+	pointIndex map[string]*valueMeta // in-memory point index
+	index      *btree.BPlusTree      // on-disk b+tree for range queries
 }
 
 // NewKVEngine initializes the key-value engine with WAL and B+ tree.
 func NewKVEngine(walPath string, btreeOrder int) (*KVEngine, error) {
-	
 
 	// opens wal (create if not exists) and recovers last LSN
 	w, err := wal.New(walPath)
@@ -31,12 +30,12 @@ func NewKVEngine(walPath string, btreeOrder int) (*KVEngine, error) {
 	}
 
 	// create B Tree index
-	tree:= btree.New(btreeOrder)
-	
+	tree := btree.New(btreeOrder)
+
 	engine := &KVEngine{
-		wal: w,
+		wal:        w,
 		pointIndex: make(map[string]*valueMeta),
-		index: tree,
+		index:      tree,
 	}
 
 	// replay Wal to rebuild memory state
@@ -60,9 +59,8 @@ func (kv *KVEngine) Close() error {
 	return nil
 }
 
-
 // reads wal from start and applies each record to in-memory structure.
-func (kv * KVEngine) ReplayWAL() error {
+func (kv *KVEngine) ReplayWAL() error {
 
 	if kv.wal == nil {
 		return errors.New("WAL is not initialized")
@@ -75,7 +73,7 @@ func (kv * KVEngine) ReplayWAL() error {
 		case wal.RecordPut:
 			// create valueMeta and update point index
 
-			vm := &valueMeta{ value: make([]byte, len(value)), lsn: lsn }
+			vm := &valueMeta{value: make([]byte, len(value)), lsn: lsn}
 			copy(vm.value, value)
 			kv.pointIndex[string(key)] = vm
 			kv.index.Insert(string(key), value) // also insert into B+ tree
@@ -84,7 +82,6 @@ func (kv * KVEngine) ReplayWAL() error {
 			// delete from point index
 			delete(kv.pointIndex, string(key))
 			kv.index.Delete(string(key)) // also delete from B+ tree
-			
 
 		default:
 			return fmt.Errorf("unknown record type: %d", recordType)
@@ -111,7 +108,7 @@ func (kv *KVEngine) Put(key, value []byte) (uint64, error) {
 	}
 
 	// update in-memory point index
-	vm := &valueMeta{ value: make([]byte, len(value)), lsn: lsn }
+	vm := &valueMeta{value: make([]byte, len(value)), lsn: lsn}
 	copy(vm.value, value)
 	kv.pointIndex[string(key)] = vm
 
@@ -122,7 +119,7 @@ func (kv *KVEngine) Put(key, value []byte) (uint64, error) {
 }
 
 // Get retrieves the value for a given key.
-func (kv *KVEngine) Get(key []byte) ([]byte, error){
+func (kv *KVEngine) Get(key []byte) ([]byte, error) {
 	vm, ok := kv.pointIndex[string(key)]
 	if !ok {
 		return nil, errors.New("key not found")
@@ -154,6 +151,6 @@ func (kv *KVEngine) Delete(key []byte) (uint64, error) {
 }
 
 // Range retrieves all key-value pairs within the specified key range [startKey, endKey].
-func (kv *KVEngine) Range(startKey, endKey []byte) ([]btree.KVPair) {
+func (kv *KVEngine) Range(startKey, endKey []byte) []btree.KVPair {
 	return kv.index.RangeQuery(string(startKey), string(endKey))
 }

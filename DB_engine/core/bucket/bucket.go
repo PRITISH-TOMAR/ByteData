@@ -1,38 +1,37 @@
 package bucket
 
 import (
+	"byted/DB_engine/constants"
+	"byted/DB_engine/core/kv"
 	"fmt"
 	"os"
-	"strings"
 	"path/filepath"
-	"github.com/PRITISH-TOMAR/byted/constants"
-	"github.com/PRITISH-TOMAR/byted/internal/kv"
+	"strings"
 )
 
-type Bucket struct{
-	Name string
+type Bucket struct {
+	Name     string
 	KvEngine *kv.KVEngine
 }
 
-func NewBucket(name, baseDir string, btreeOrder int) (*Bucket, error){
-	
-	walPath := filepath.Join(baseDir, name + constants.WALFILENAME)
+func NewBucket(name, baseDir string, btreeOrder int) (*Bucket, error) {
+
+	walPath := filepath.Join(baseDir, name+constants.WALFILENAME)
 	kvEngine, err := kv.NewKVEngine(walPath, btreeOrder)
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	bucket := &Bucket{
-		Name: name,
+		Name:     name,
 		KvEngine: kvEngine,
 	}
 	return bucket, nil
 }
 
 // Close closes the WAL file associated with the bucket.
-func (b* Bucket) Close() error{
+func (b *Bucket) Close() error {
 	return b.KvEngine.Close()
 }
-
 
 func (bm *BucketManager) CreateBucket(name string, btreeOrder int) error {
 	bm.mutex.Lock()
@@ -125,5 +124,3 @@ func (bm *BucketManager) DropBucket(name string) error {
 	bm.SaveMetaData()
 	return nil
 }
-
-
