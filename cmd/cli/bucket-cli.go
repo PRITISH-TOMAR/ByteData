@@ -4,11 +4,10 @@ import (
 	"bufio"
 	"byted/internal/bucket"
 	"fmt"
-	"net"
 	"os"
 )
 
-func StartBucketCLI(bucketManager *bucket.BucketManager, conn net.Conn) {
+func StartBucketCLI(bucketManager *bucket.BucketManager) {
 	reader := bufio.NewScanner(os.Stdin)
 	bucket, err := bucketManager.GetActiveBucket()
 	if err != nil {
@@ -22,8 +21,8 @@ func StartBucketCLI(bucketManager *bucket.BucketManager, conn net.Conn) {
 		if !reader.Scan() {
 			break
 		}
-		cmdLine := reader.Text()
-		err := ExecuteCommand(cmdLine, bucket, conn)
+		// cmdLine := reader.Text()
+		// err := ExecuteCommand(cmdLine, bucket)
 
 		if err != nil && err.Error() == "exit" {
 			bucketManager.ExitBucket()

@@ -9,13 +9,17 @@ import (
 	"byted/internal/auth"
 	"byted/internal/bucket"
 	"byted/structs"
+
 	"byted/cmd/cli"
 )
 
 type Server struct {
-	ListenAddr    string
+	ListenAddr string
+
+	Listener net.Listener
+}
+type ClientContext struct {
 	BucketManager *bucket.BucketManager
-	Listener      net.Listener
 }
 
 func (s *Server) Start() error {
@@ -32,10 +36,8 @@ func (s *Server) Start() error {
 }
 
 func NewServer(listenAddr string) *Server {
-	bm, _ := bucket.NewBucketManager(constants.DBBUCKETSPATH)
 	return &Server{
-		ListenAddr:    listenAddr,
-		BucketManager: bm,
+		ListenAddr: listenAddr,
 	}
 }
 func communicators(conn net.Conn) *structs.Communicators {
@@ -53,51 +55,77 @@ func (s *Server) acceptLoop() {
 			fmt.Fprintf(conn, "failed to accept connection: %v\n", err)
 			continue
 		}
-		defer conn.Close()
 
 		comm := communicators(conn)
+		bm, _ := bucket.NewBucketManager(constants.DBBUCKETSPATH)
+
+		ctx := &ClientContext{
+			BucketManager: bm,
+		}
+
 		if !auth.HandleAuthenticatedConnection(comm) {
 			conn.Close()
 		}
 
-		go s.readLoop(comm)
+		go s.readLoop(comm, ctx, conn)
 
 	}
 }
 
-func (s *Server) readLoop(comm *structs.Communicators) {
-    for {
-        var msg structs.Message
+func (s *Server) readLoop(comm *structs.Communicators, ctx *ClientContext, conn net.Conn) {
+	for {
+		var msg structs.Message
 
-        // Read message from client
-        if err := comm.Dec.Decode(&msg); err != nil {
-            fmt.Println("Client disconnected:", err)
-            return
-        }
+		// Read message from client
+		if err := comm.Dec.Decode(&msg); err != nil {
+			fmt.Println("Client disconnected:", err)
+			return
+		}
+		ActiveBucket, _ := ctx.BucketManager.GetActiveBucket()
 
-        switch msg.Type {
-        case "command":
-            // Execute the command
-            err := cli.ExecuteGlobalCommmand(comm, msg.Command, s.BucketManager)
-            if err != nil {
-                // Send error back to client
-                comm.Enc.Encode(structs.Message{
-                    Type:    "error",
-                    Message: err.Error(),
-                })
-                continue
-            }
+		switch msg.Type {
+		case "command":
+			// Execute the command
+			var data []string
+			var err error
 
-        default:
-            // Unknown message type
-            comm.Enc.Encode(structs.Message{
-                Type:    "error",
-                Message: "Unknown message type: " + msg.Type,
-            })
-        }
-    }
+			if ActiveBucket == nil {
+				data, err = cli.ExecuteGlobalCommmand(msg.Command, ctx.BucketManager, conn)
+			} else {
+				data, err = cli.ExecuteCommand(msg.Command, ActiveBucket, ctx.BucketManager)
+			}
+			ActiveBucket, _ = ctx.BucketManager.GetActiveBucket()
+			var currentBkt string
+			if ActiveBucket == nil {
+				currentBkt = ""
+			} else {
+				currentBkt = ActiveBucket.Name
+			}
+			if err != nil {
+				// Send error back to client
+				comm.Enc.Encode(structs.Message{
+					Type:    "error",
+					Message: err.Error(),
+					Bucket:  currentBkt,
+				})
+				continue
+			} else {
+				comm.Enc.Encode(structs.Message{
+					Type:   "success",
+					Data:   data,
+					Bucket: currentBkt,
+				})
+			}
+
+		default:
+			// Unknown message type
+			comm.Enc.Encode(structs.Message{
+				Type:    "error",
+				Message: "Unknown message type: " + msg.Type,
+			})
+		}
+	}
 }
-
 
 func main() {
 	server := NewServer(":8080")

@@ -15,6 +15,7 @@ import (
 // Message matches the JSON protocol used by the server
 type Message struct {
 	Type     string   `json:"type"`
+	Bucket   string   `json:"bucket"`
 	Field    string   `json:"field,omitempty"`
 	Username string   `json:"username,omitempty"`
 	Password string   `json:"password,omitempty"`
@@ -29,16 +30,19 @@ func main() {
 
 	// Connect to server
 	conn := getConnection(addr)
+	defer conn.Close()
 	enc := json.NewEncoder(conn)
 	dec := json.NewDecoder(conn)
 
 	var msg Message
 
 	// Handle entire authentication
-	handleAuth(username, enc, dec, msg)
+	if !handleAuth(username, enc, dec, &msg) {
+		return
+	}
 
 	// handle command mode
-	// CommandLoop(enc, dec, msg)
+	CommandLoop(enc, dec, msg)
 }
 
 func getClientInfo() (*string, *string) {
@@ -59,26 +63,25 @@ func getConnection(addr *string) net.Conn {
 		fmt.Println("Failed to connect:", err)
 		os.Exit(1)
 	}
-	defer conn.Close()
 
 	return conn
 }
 
-func handleAuth(username *string, enc *json.Encoder, dec *json.Decoder, msg Message) {
+func handleAuth(username *string, enc *json.Encoder, dec *json.Decoder, msg *Message) bool {
 	if err := dec.Decode(&msg); err != nil {
-		fmt.Println("Connection closed by server")
-		return
+		fmt.Println("Connection closed by server!", err)
+		return false
 	}
 	enc.Encode(Message{Type: "auth", Username: *username})
 
 	// Step 3: Read server reply (user exists or error)
 	if err := dec.Decode(&msg); err != nil {
-		fmt.Println("Connection closed by server")
-		return
+		fmt.Println("Connection closed by server!")
+		return false
 	}
 	if msg.Type == "error" {
 		fmt.Println(msg.Message)
-		return
+		return false
 	}
 
 	// Step 4: Server asks for password
@@ -97,33 +100,45 @@ func handleAuth(username *string, enc *json.Encoder, dec *json.Decoder, msg Mess
 	}
 	// Step 5: Read authentication result
 	if err := dec.Decode(&msg); err != nil {
-		fmt.Println("Connection closed by server")
-		return
+		fmt.Println("Connection closed by server!")
+		return false
 	}
 	if msg.Type == "error" {
 		fmt.Println(msg.Message)
-		return
+		return false
 	}
 	fmt.Println(msg.Message) // Welcome message
+	return true
 }
-
 
 func CommandLoop(enc *json.Encoder, dec *json.Decoder, msg Message) {
 	reader := bufio.NewReader(os.Stdin)
+	active := ""
 	for {
-		fmt.Print("ByteData> ")
+		fmt.Print("ByteData> " + active)
 		line, _ := reader.ReadString('\n')
 		line = strings.TrimSpace(line)
-
+		if line == ""{
+			continue
+		}
 		// Send command
 		enc.Encode(Message{Type: "command", Command: line})
 
 		// Read server response
 		if err := dec.Decode(&msg); err != nil {
-			fmt.Println("Server disconnected")
+			fmt.Println("Exiting...")
 			return
 		}
+		
+		active = msg.Bucket
+		if active != "" {
+			active = "["+active+"]:"
+		}
 
-		fmt.Println(msg.Message)
+		if msg.Type == "error" {
+			fmt.Println("ByteData> " + active + msg.Message)
+		} else {
+			fmt.Println("ByteData> " + active + strings.Join(msg.Data, "\n"))
+		}
 	}
 }

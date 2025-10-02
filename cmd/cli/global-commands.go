@@ -1,21 +1,20 @@
 package cli
 
 import (
-	"fmt"
-	"net"
-	"os"
-	"strings"
-
 	"byted/constants"
 	"byted/internal/bucket"
+	"fmt"
+	"net"
+	"strings"
 )
 
-func ExecuteGlobalCommmand(conn net.Conn, input string, bucketManager *bucket.BucketManager) error {
+
+func ExecuteGlobalCommmand(input string, bucketManager *bucket.BucketManager, conn net.Conn) ([]string, error) {
 	// Parse the command line input
 
 	input = strings.TrimSpace(input)
 	if input == "" {
-		return nil
+		return nil, nil
 	}
 	parts := strings.Fields(input)
 	command := parts[0]
@@ -25,109 +24,97 @@ func ExecuteGlobalCommmand(conn net.Conn, input string, bucketManager *bucket.Bu
 		return handleExit(conn)
 
 	case "help":
-		return handleHelp(0, conn)
+		return handleHelp(0)
 
 	case "list":
-		return handleListBuckets("", bucketManager, conn)
+		return handleListBuckets("", bucketManager)
 
 	case "use":
-		return handleUseBucket(parts, bucketManager, conn)
+		return handleUseBucket(parts, bucketManager)
 
 	case "create":
-		return handleCreateBucket(parts, bucketManager, conn)
+		return handleCreateBucket(parts, bucketManager)
 
 	case "drop":
-		return handleDropBucket(parts, bucketManager, conn)
+		return handleDropBucket(parts, bucketManager)
 
-	case "pwb":
-		return showActiveBucket(bucketManager, conn)
+	
 
 	default:
-		fmt.Fprintf(conn, "unknown command: %s", command)
-		return handleHelp(0, conn)
+		return handleHelp(0)
 
 	}
-
-	return nil
 }
 
-func handleListBuckets(input string, bucketManager *bucket.BucketManager, conn net.Conn) error {
-	fmt.Println("Buckets:")
-
-	for _, bucket := range bucketManager.ListBuckets(input) {
-		{
-			fmt.Fprintf(conn, " - %s\n", bucket)
-		}
-	}
-	return nil
-
+func handleListBuckets(input string, bucketManager *bucket.BucketManager) ([]string, error) {
+	return bucketManager.ListBuckets(input), nil
 }
 
-func handleUseBucket(parts []string, bucketManager *bucket.BucketManager, conn net.Conn) error {
+func handleUseBucket(parts []string, bucketManager *bucket.BucketManager) ([]string, error) {
 	if len(parts) != 2 {
-		return fmt.Errorf("usage: use <bucket_name>")
+		return nil, fmt.Errorf("usage: use <bucket_name>")
 	}
+
 	if _, err := bucketManager.UseBucket(parts[1]); err != nil {
-		return err
+		return nil, err
 	}
 
-	StartBucketCLI(bucketManager, conn)
-	return nil
+	return []string{fmt.Sprintf("Switched to bucket '%s'", parts[1])}, nil
 }
 
-func handleCreateBucket(parts []string, bucketManager *bucket.BucketManager, conn net.Conn) error {
+func handleCreateBucket(parts []string, bucketManager *bucket.BucketManager) ([]string, error) {
+	// enc := comm.Enc
 	if len(parts) != 2 {
-		return fmt.Errorf("usage: create <bucket_name>")
+		// enc.Encode(structs.Message{Type: "error", Message:"usage: create <bucket_name>"})
+		return nil, fmt.Errorf("usage: create <bucket_name>")
 	}
 	if err := bucketManager.CreateBucket(parts[1], constants.DEFAULTREEORDER); err != nil {
-		return err
+		return nil, err
 	}
-	fmt.Fprintf(conn, "Bucket '%s' created successfully.\n", parts[1])
-	return nil
+	return []string{"Bucket created successfully."}, nil
 }
 
-func handleDropBucket(parts []string, bucketManager *bucket.BucketManager, conn net.Conn) error {
+func handleDropBucket(parts []string, bucketManager *bucket.BucketManager) ([]string, error) {
 	if len(parts) != 2 {
-		return fmt.Errorf("usage: drop <bucket_name>")
+		return nil, fmt.Errorf("usage: drop <bucket_name>")
 	}
 	if err := bucketManager.DropBucket(parts[1]); err != nil {
-		return err
+		return nil, err
 	}
-	fmt.Fprintf(conn, "Bucket '%s' dropped successfully.\n", parts[1])
-	return nil
+
+	return []string{fmt.Sprintf("Bucket '%s' dropped successfully.\n", parts[1])}, nil
 }
 
-func showActiveBucket(bucketManager *bucket.BucketManager, conn net.Conn) error {
-	activeBucket, err := bucketManager.GetActiveBucket()
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(conn, "Active Bucket: %s\n", activeBucket.Name)
-	return nil
-}
-func handleExit(conn net.Conn) error {
-	fmt.Println("Exiting...")
-	os.Exit(0)
-	return nil
+// func showActiveBucket(bucketManager *bucket.BucketManager) ([]string, error) {
+// 	activeBucket, err := bucketManager.GetActiveBucket()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return []string{activeBucket.Name}, nil
+// }
+
+func handleExit(conn net.Conn) ([]string, error) {
+	conn.Close()
+	return []string{"Exiting..."}, nil
 }
 
-func handleHelp(typeHelp int, conn net.Conn) error {
+func handleHelp(typeHelp int) ([]string, error) {
 
 	if typeHelp == 0 {
-		printHelpGlobal(conn)
-	} else {
-		printHelpBucket(conn)
+		return printHelpGlobal()
 	}
-	return nil
+	return printHelpBucket()
+
 }
 
-func printHelpGlobal(conn net.Conn) {
-	fmt.Fprintln(conn, "Available commands:")
-	fmt.Fprintln(conn, "  create <bucket_name>         - Create a new bucket")
-	fmt.Fprintln(conn, "  list                         - List all buckets")
-	fmt.Fprintln(conn, "  use <bucket_name>            - Switch to the specified bucket")
-	fmt.Fprintln(conn, "  drop <bucket_name>           - Delete the specified bucket")
-	fmt.Fprintln(conn, "  pwb                          - Print the active bucket")
-	fmt.Fprintln(conn, "  exit / quit                  - Exit the CLI")
-	fmt.Fprintln(conn, "  help                         - Show this help message")
+func printHelpGlobal() ([]string, error) {
+	help := []string{`Available commands:
+  create <bucket_name>         - Create a new bucket
+  list                         - List all buckets
+  use <bucket_name>            - Switch to the specified bucket
+  drop <bucket_name>           - Delete the specified bucket
+  pwb                          - Print the active bucket
+  exit / quit                  - Exit the CLI
+  help                         - Show this help message`}
+	return help, nil
 }
