@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"byted/constants"
-	"byted/internal/bucket"
+	"byted/DB_engine/constants"
+	"byted/DB_engine/core/bucket"
 	"fmt"
 	"net"
 	"strings"

@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"byted/constants"
-	"byted/internal/kv"
+	"byted/DB_engine/constants"
+	"byted/DB_engine/core/kv"
 )
 
 type BucketManager struct {

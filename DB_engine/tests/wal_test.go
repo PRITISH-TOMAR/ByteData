@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"byted/internal/wal"
+	"byted/DB_engine/core/wal"
 )
 
 func TestWAL(t *testing.T) {

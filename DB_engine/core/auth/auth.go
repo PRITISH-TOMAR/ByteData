@@ -2,7 +2,7 @@ package auth
 
 import (
 	"bufio"
-	"byted/constants"
+	"byted/DB_engine/constants"
 	"encoding/json"
 	"errors"
 	"fmt"

@@ -1,8 +1,8 @@
 package bucket
 
 import (
-	"byted/constants"
-	"byted/internal/kv"
+	"byted/DB_engine/constants"
+	"byted/DB_engine/core/kv"
 	"fmt"
 	"os"
 	"path/filepath"

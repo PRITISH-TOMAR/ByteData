@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"net"
 
-	"byted/constants"
-	"byted/internal/auth"
-	"byted/internal/bucket"
-	"byted/structs"
-
-	"byted/cmd/cli"
+	"byted/DB_engine/constants"
+	"byted/DB_engine/core/auth"
+	"byted/DB_engine/core/bucket"
+	"byted/DB_engine/structs"
+	"byted/DB_engine/cmd/cli"
 )
 
 type Server struct {

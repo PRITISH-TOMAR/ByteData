@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"byted/internal/btree"
-	"byted/internal/wal"
+	"byted/DB_engine/core/btree"
+	"byted/DB_engine/core/wal"
 )
 
 // valueMeta holds the value and its last associated LSN.

@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"byted/structs"
+	"byted/DB_engine/structs"
 	"fmt"
 )
 

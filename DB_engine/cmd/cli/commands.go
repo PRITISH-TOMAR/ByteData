@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"byted/internal/bucket"
+	"byted/DB_engine/core/bucket"
 	"errors"
 	"fmt"
 	"strings"

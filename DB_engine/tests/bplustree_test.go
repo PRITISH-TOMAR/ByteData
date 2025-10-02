@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"byted/internal/btree"
+	"byted/DB_engine/core/btree"
 	"fmt"
 	"testing"
 )
