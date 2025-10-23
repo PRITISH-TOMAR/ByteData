@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"byted/DB_engine/structs"
+	"byted/Server/DB_engine/structs"
 	"fmt"
 )
 
@@ -11,7 +11,7 @@ func HandleAuthenticatedConnection(comm *structs.Communicators) bool {
 	enc.Encode(structs.Message{Type: "request", Field: "username"})
 
 	var msg structs.Message
-	
+
 	dec.Decode(&msg)
 
 	if !AuthExists() {
@@ -20,14 +20,14 @@ func HandleAuthenticatedConnection(comm *structs.Communicators) bool {
 		enc.Encode(structs.Message{Type: "request", Field: "password", Message: fmt.Sprintf("\nEnter %s's password: ", msg.Username)})
 
 		dec.Decode(&msg)
-		if msg.Username== "" || msg.Password == ""{
+		if msg.Username == "" || msg.Password == "" {
 			enc.Encode(structs.Message{Type: "error", Message: "\nUsername & password must not be empty!"})
 		}
 
 		if CreateUser(msg.Username, msg.Password) != nil {
 			enc.Encode(structs.Message{Type: "error", Message: "\nNew user creation failure!"})
 		}
-		enc.Encode(structs.Message{Type: "success", Message: fmt.Sprintf("\nWelcome %s", msg.Username)});
+		enc.Encode(structs.Message{Type: "success", Message: fmt.Sprintf("\nWelcome %s", msg.Username)})
 		return true
 	}
 

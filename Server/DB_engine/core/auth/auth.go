@@ -2,7 +2,7 @@ package auth
 
 import (
 	"bufio"
-	"byted/DB_engine/constants"
+	"byted/Server/DB_engine/constants"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -36,6 +36,7 @@ func InitAuthFile() error {
 
 func AuthExists() bool {
 	_, err := os.Stat(authFile)
+	fmt.Println(authFile)
 	return !os.IsNotExist(err)
 
 }
@@ -63,7 +64,6 @@ func CreateUser(username, password string) error {
 	return os.WriteFile(authFile, data, 0600)
 }
 
-
 func ValidateUser(username, password string) error {
 	data, err := os.ReadFile(authFile)
 	if err != nil {
@@ -86,7 +86,6 @@ func ValidateUser(username, password string) error {
 	fmt.Println("Authentication successful")
 	return nil
 }
-
 
 func UserExists(username string) bool {
 	data, err := os.ReadFile(authFile)

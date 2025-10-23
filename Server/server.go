@@ -1,15 +1,16 @@
 package main
 
 import (
+	"byted/Server/DB_engine/cmd/cli"
+	"byted/Server/DB_engine/constants"
+	"byted/Server/DB_engine/core/auth"
+	"byted/Server/DB_engine/core/bucket"
+	"byted/Server/DB_engine/structs"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net"
-
-	"byted/DB_engine/constants"
-	"byted/DB_engine/core/auth"
-	"byted/DB_engine/core/bucket"
-	"byted/DB_engine/structs"
-	"byted/DB_engine/cmd/cli"
+	"os"
 )
 
 type Server struct {
@@ -28,7 +29,7 @@ func (s *Server) Start() error {
 	}
 	s.Listener = ln
 	defer s.Listener.Close()
-	fmt.Printf("Server listening on %s\n", s.ListenAddr)
+	fmt.Printf("Server listening on %s...\n", s.ListenAddr)
 
 	s.acceptLoop()
 	return nil
@@ -126,7 +127,22 @@ func (s *Server) readLoop(comm *structs.Communicators, ctx *ClientContext, conn 
 	}
 }
 
+func getPort() string {
+	defaultPort := os.Getenv("SERVER_PORT")
+
+	if defaultPort == "" {
+		port := flag.String("port", defaultPort, "Server port to listen on")
+		flag.Parse()
+		defaultPort = *port
+	}
+	if defaultPort == "" {
+		defaultPort = constants.SERVER_DEFAULT_PORT
+	}
+	return defaultPort
+}
 func main() {
-	server := NewServer(":8080")
+
+	defaultPort := getPort()
+	server := NewServer(":" + defaultPort)
 	server.Start()
 }

@@ -1,8 +1,8 @@
 package bucket
 
 import (
-	"byted/DB_engine/constants"
-	"byted/DB_engine/core/kv"
+	"byted/Server/DB_engine/constants"
+	"byted/Server/DB_engine/core/kv"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -82,10 +82,10 @@ func (bm *BucketManager) ListBuckets(input string) []string {
 	bm.mutex.RLock()
 	defer bm.mutex.RUnlock()
 
-	bucketNames := make([]string, 0, len(bm.Buckets))
+	bucketNames := make([]string, 1, len(bm.Buckets)+1)
 	for name := range bm.Buckets {
 		if input == "" || strings.Contains(name, input) {
-			bucketNames = append(bucketNames, name)
+			bucketNames = append(bucketNames, "- " + name)
 		}
 	}
 	return bucketNames
