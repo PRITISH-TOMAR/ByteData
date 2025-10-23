@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  server:
+    build:
+      context: ./Server
+    container_name: byted-server
+    environment:
+    - SERVER_PORT=${SERVER_PORT:-9090} 
+    ports: 
+      - "${SERVER_PORT}:9090"
+    command: ["./server", "-port", "${SERVER_PORT}"]
+    networks:
+      - byted-net
+    volumes:
+      - ./.bytedata:/root/.bytedata
+
+  client:
+    build:
+      context: ./Client
+    container_name: byted-client
+    depends_on:
+      - server
+    networks:
+      - byted-net
+    stdin_open: true 
+    tty: true 
+    environment:
+    - SERVER_PORT=server:${SERVER_PORT:-9090}    
+    command: "/bin/sh"
+
+networks:
+  byted-net:
+    driver: bridge
+# docker-compose up -d --build 
+# docker-compose run --rm client ./client -u root -addr server:9090
