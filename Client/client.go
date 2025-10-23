@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"strings"
+
 	"golang.org/x/term"
 )
 
@@ -45,14 +46,21 @@ func main() {
 }
 
 func getClientInfo() (*string, *string) {
-	uname := flag.String("u", "", "Username for the session")
-	addr := flag.String("addr", "localhost:8080", "Server address")
+
+	serverPort := os.Getenv("SERVER_PORT")
+	if serverPort == "" {
+		serverPort = SERVER_DEFAULT_URL
+	}
+
+	uname := flag.String("u", "", "username for DB_Config")
+	addr := flag.String("addr", serverPort, "Server address")
 	flag.Parse()
 
 	if *uname == "" {
 		fmt.Println("Usage: bytedata -u <username>")
 		os.Exit(1)
 	}
+
 	return uname, addr
 }
 
@@ -90,11 +98,20 @@ func handleAuth(username *string, enc *json.Encoder, dec *json.Decoder, msg *Mes
 	}
 
 	if msg.Type == "request" && msg.Field == "password" {
-		fmt.Print(msg.Message)
-		passBytes, _ := term.ReadPassword(int(os.Stdin.Fd()))
-		password := strings.TrimSpace(string(passBytes))
+		{
+			for {
+				fmt.Print(msg.Message)
+				passBytes, _ := term.ReadPassword(int(os.Stdin.Fd()))
+				password := strings.TrimSpace(string(passBytes))
 
-		enc.Encode(Message{Type: "auth", Password: password})
+				if password != "" {
+					enc.Encode(Message{Type: "auth", Password: password})
+					break 
+				}
+
+				fmt.Println("\nPassword cannot be empty. Please try again.")
+			}
+		}
 
 	}
 	// Step 5: Read authentication result
@@ -117,7 +134,7 @@ func CommandLoop(enc *json.Encoder, dec *json.Decoder, msg Message) {
 		fmt.Print("ByteData> " + active)
 		line, _ := reader.ReadString('\n')
 		line = strings.TrimSpace(line)
-		if line == ""{
+		if line == "" {
 			continue
 		}
 		// Send command
@@ -128,10 +145,10 @@ func CommandLoop(enc *json.Encoder, dec *json.Decoder, msg Message) {
 			fmt.Println("Exiting...")
 			return
 		}
-		
+
 		active = msg.Bucket
 		if active != "" {
-			active = "["+active+"]:"
+			active = "[" + active + "]:"
 		}
 
 		if msg.Type == "error" {
