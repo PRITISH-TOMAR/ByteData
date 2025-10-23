@@ -2,69 +2,75 @@
 
 A high-performance data management application built with Go.
 
-## **Quick Start**  
+## **Quick Start**
 
-### Option A: Run Directly (from Git)
+### Option 1: Run with Docker Compose (Recommended)
 
-  
-
-### 1. **Clone the repository**:
-
+#### 1. **Clone the repository**:
 ```bash
-
-git clone https://github.com/PRITISH-TOMAR/bytedata.git
-
-cd bytedata
-
-
-```
-
-  
-
-### 2. **Build and run**:
-
-```bash
-
-# For the very first time :
-go run cmd/main.go 
-
-
-# After setting up the new username and password
-go run cmd/main.go -u <username>
-```
-
-  
-
-The application will run with default configuration.
-
-  
-
-### **Option B: Run with Docker (with volume mount)**
-
-  
-
-### 1. **Clone the repository**:
-
-```bash
-
 git clone https://github.com/PRITISH-TOMAR/bytedata.git
 cd bytedata
-
 ```
 
-  
-
-2. **Build and run with Docker**:
-
+#### 2. **Start the services in background**:
 ```bash
-
-# Build the image
-docker build -t bytedata .
-
-# For the very first time, Run with volume mount for data persistence
-docker run -it -p 4040:4040 -v ./.bytedata:/root/.bytedata/ bytedata
-
-# After setting up the new username and password
-docker run -it -p 4040:4040 -v $(pwd)/.bytedata:/root/.bytedata/ bytedata -u <username>
-
+docker-compose up -d --build
 ```
+
+#### 4. **Run the client interactively**:
+```bash
+# With specific username:
+docker-compose run --rm client ./client -u <username>
+```
+
+#### 5. **Stop everything**:
+```bash
+docker-compose down
+```
+--- 
+---
+
+### Option 2: Run Directly (Manual Build)
+
+#### 1. **Clone the repository**:
+```bash
+git clone https://github.com/PRITISH-TOMAR/bytedata.git
+cd bytedata
+```
+
+#### 2. **Build and run the Server**:
+```bash
+cd Server
+go mod download
+go build -o server .
+./server -port 9090
+```
+
+Keep this terminal running.
+
+#### 3. **Build and run the Client** (in a new terminal):
+```bash
+cd Client
+go mod download
+go build -o client .
+
+./client -u <username> -addr localhost:9090
+```
+
+---
+
+## **Features**
+
+- Database Server with WAL (Write-Ahead Logging) Persistence
+- Multiple bucket support
+- Range queries support over the bucket
+- Multiple client connections over TCP
+
+
+## **Requirements**
+
+- **Option 1**: Docker and Docker Compose
+- **Option 2**: Go 1.24 or higher
+
+
+
